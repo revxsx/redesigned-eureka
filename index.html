@@ -13,9 +13,9 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: #f5f5f5;
+    background: gray;
     font-family: 'Montserrat', sans-serif;
-    color: #222;
+    color: white;
   }
   h1 { font-size: 2rem; margin-bottom: 10px; text-align: center; }
   .progress-container {
@@ -38,7 +38,7 @@
 </style>
 </head>
 <body>
-<h1>SilenceMeter</h1>
+<h1>Уровень обедовца</h1>
 <div class="progress-container" id="progressContainer">
   <div class="progress-bar" id="progressBar"></div>
 </div>
@@ -69,7 +69,7 @@ function formatDate(date) {
 }
 
 tg.MainButton.show();
-tg.MainButton.setText(canMeasure() ? "Измерить" : "Закрыть");
+tg.MainButton.setText(canMeasure() ? "Измерить" : "Сейчас нельзя измерить");
 
 tg.MainButton.onClick(()=>{
   if(!canMeasure()) {
@@ -87,7 +87,7 @@ tg.MainButton.onClick(()=>{
     const percent = Math.floor(Math.random()*101); // 0-100%
     const now = new Date();
 
-    resultEl.innerHTML = `Ваш уровень обедовца: ${percent}%<br><small>${formatDate(now)}</small>`;
+    resultEl.innerHTML = `Ваш уровень обедовца: ${percent}%<br><small>${formatDate(now)}</small> Учтите: вы сможете измерить уровень обедовца заново только через 24 часа.`;
     resultEl.classList.add("show");
     progressContainer.classList.remove("show");
 
