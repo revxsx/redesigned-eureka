@@ -1,139 +1,101 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SilenceMeter</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background: var(--tg-theme-bg-color, #f0f0f0);
-      color: var(--tg-theme-text-color, #222);
-      font-family: 'Montserrat', sans-serif;
-      transition: all 0.3s ease;
-    }
-
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 20px;
-      font-weight: 700;
-      text-align: center;
-    }
-
-    .progress-container {
-      width: 70%;
-      height: 14px;
-      border-radius: 8px;
-      background: rgba(0, 0, 0, 0.1);
-      margin: 20px 0;
-      overflow: hidden;
-      opacity: 0;
-      transition: all 0.3s ease;
-    }
-
-    .progress-container.show {
-      opacity: 1;
-    }
-
-    .progress-bar {
-      width: 0%;
-      height: 100%;
-      background: #666;
-      transition: width 2s linear;
-    }
-
-    .result {
-      font-size: 1.2rem;
-      font-weight: 500;
-      margin-top: 20px;
-      padding: 10px 15px;
-      border-radius: 10px;
-      background: rgba(0, 0, 0, 0.05);
-      color: inherit;
-      text-align: center;
-      opacity: 0;
-      transition: all 0.4s ease;
-    }
-
-    .result.show {
-      opacity: 1;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SilenceMeter Obedovets</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #f5f5f5;
+    font-family: 'Montserrat', sans-serif;
+    color: #222;
+  }
+  h1 { font-size: 2rem; margin-bottom: 10px; text-align: center; }
+  .progress-container {
+    width: 70%; height: 14px; border-radius: 8px;
+    background: rgba(0,0,0,0.1); margin: 20px 0; overflow: hidden;
+    opacity: 0; transition: all 0.3s ease;
+  }
+  .progress-container.show { opacity: 1; }
+  .progress-bar {
+    width: 0%; height: 100%; background: #666;
+    transition: width 2s linear;
+  }
+  .result {
+    font-size: 1.3rem; font-weight: 500; padding: 10px 15px;
+    border-radius: 10px; background: rgba(0,0,0,0.05);
+    margin-top: 10px; text-align: center; opacity: 0;
+    transition: all 0.4s ease;
+  }
+  .result.show { opacity: 1; }
+</style>
 </head>
 <body>
-  <div class="content">
-    <h1>SilenceMeter</h1>
+<h1>SilenceMeter</h1>
+<div class="progress-container" id="progressContainer">
+  <div class="progress-bar" id="progressBar"></div>
+</div>
+<div class="result" id="result"></div>
 
-    <div class="progress-container" id="progressContainer">
-      <div class="progress-bar" id="progressBar"></div>
-    </div>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
 
-    <div class="result" id="result"></div>
-  </div>
+const progressContainer = document.getElementById("progressContainer");
+const progressBar = document.getElementById("progressBar");
+const resultEl = document.getElementById("result");
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+const STORAGE_KEY = "lastMeasureTime";
 
-    const resultEl = document.getElementById("result");
-    const progressContainer = document.getElementById("progressContainer");
-    const progressBar = document.getElementById("progressBar");
+// Проверка, можно ли измерять
+function canMeasure() {
+  const last = localStorage.getItem(STORAGE_KEY);
+  if(!last) return true;
+  const diff = Date.now() - parseInt(last);
+  return diff >= 24*60*60*1000; // 24 часа
+}
 
-    let lastResult = null;
-    let state = "ready"; // ready | measured
+// Формат даты
+function formatDate(date) {
+  return date.toLocaleDateString("ru-RU") + " " + date.toLocaleTimeString("ru-RU", {hour:'2-digit', minute:'2-digit'});
+}
 
-    // Устанавливаем начальную кнопку
-    tg.MainButton.setText("Измерить радиацию");
-    tg.MainButton.show();
+tg.MainButton.show();
+tg.MainButton.setText(canMeasure() ? "Измерить" : "Закрыть");
 
-    function getComment(value) {
-      if (value < 0.5) return "Опасности нет";
-      if (value < 2) return "Уровень в норме";
-      if (value < 5) return "Повышенный фон";
-      return "Эвакуация немедленно!";
-    }
+tg.MainButton.onClick(()=>{
+  if(!canMeasure()) {
+    tg.close();
+    return;
+  }
 
-    tg.MainButton.onClick(() => {
-      if (state === "ready") {
-        // Запускаем измерение
-        resultEl.classList.remove("show");
-        progressBar.style.width = "0%";
-        progressContainer.classList.add("show");
+  resultEl.classList.remove("show");
+  progressBar.style.width="0%";
+  progressContainer.classList.add("show");
 
-        setTimeout(() => {
-          progressBar.style.width = "100%";
-        }, 100);
+  setTimeout(()=>{ progressBar.style.width="100%"; },100);
 
-        setTimeout(() => {
-          const value = (Math.random() * 10).toFixed(2);
-          const comment = getComment(value);
-          const dateStr = new Date().toLocaleString("ru-RU");
+  setTimeout(()=>{
+    const percent = Math.floor(Math.random()*101); // 0-100%
+    const now = new Date();
 
-          resultEl.innerHTML = `Уровень радиации: ${value} μSv/h<br><small>${comment}</small>`;
-          resultEl.classList.add("show");
-          progressContainer.classList.remove("show");
+    resultEl.innerHTML = `Ваш уровень обедовца: ${percent}%<br><small>${formatDate(now)}</small>`;
+    resultEl.classList.add("show");
+    progressContainer.classList.remove("show");
 
-          lastResult = { radiation: value, comment, date: dateStr };
+    localStorage.setItem(STORAGE_KEY, Date.now());
 
-          // Меняем кнопку
-          tg.MainButton.setText("Закрыть");
-          state = "measured";
-        }, 2200);
-      } else if (state === "measured") {
-        // Отправляем результат и закрываем
-        if (lastResult) {
-          tg.sendData(JSON.stringify(lastResult));
-        }
-        tg.close();
-      }
-    });
-  </script>
+    tg.MainButton.setText("Закрыть");
+  },2200);
+});
+</script>
 </body>
 </html>
