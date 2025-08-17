@@ -13,7 +13,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: gray;
+    background: #1c1414;
     font-family: 'Montserrat', sans-serif;
     color: white;
   }
@@ -87,7 +87,7 @@ tg.MainButton.onClick(()=>{
     const percent = Math.floor(Math.random()*101); // 0-100%
     const now = new Date();
 
-    resultEl.innerHTML = `Ваш уровень обедовца: ${percent}%<br><small>${formatDate(now)}</small> Учтите: вы сможете измерить уровень обедовца заново только через 24 часа.`;
+    resultEl.innerHTML = `Ваш уровень обедовца: ${percent}%<br><small>Подождите сутки перед следующим измерением.</small>`;
     resultEl.classList.add("show");
     progressContainer.classList.remove("show");
 
