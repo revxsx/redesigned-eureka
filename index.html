@@ -11,101 +11,71 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      background: var(--tg-theme-bg-color, #f5f5f5);
+      background: var(--tg-theme-bg-color, #f0f0f0);
       color: var(--tg-theme-text-color, #222);
       font-family: 'Montserrat', sans-serif;
       transition: all 0.3s ease;
     }
 
     h1 {
-      font-size: 2.5rem;
-      margin-top: 20%;
+      font-size: 2rem;
+      margin-bottom: 20px;
       font-weight: 700;
       text-align: center;
     }
 
     .progress-container {
-      width: 80%;
-      height: 18px;
-      border-radius: 10px;
+      width: 70%;
+      height: 14px;
+      border-radius: 8px;
       background: rgba(0, 0, 0, 0.1);
-      margin-top: 30px;
+      margin: 20px 0;
       overflow: hidden;
       opacity: 0;
-      transform: translateY(20px);
       transition: all 0.3s ease;
     }
 
     .progress-container.show {
       opacity: 1;
-      transform: translateY(0);
     }
 
     .progress-bar {
       width: 0%;
       height: 100%;
-      background: var(--tg-theme-button-color, #0088cc);
+      background: #666;
       transition: width 2s linear;
     }
 
     .result {
-      font-size: 1.4rem;
-      font-weight: 600;
-      margin-bottom: 20px;
-      margin-top: 30px;
-      padding: 15px 25px;
-      border-radius: 16px;
-      background: var(--tg-theme-button-color, #0088cc);
-      color: var(--tg-theme-button-text-color, #fff);
-      opacity: 0;
-      transform: translateY(20px);
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin-top: 20px;
+      padding: 10px 15px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.05);
+      color: inherit;
       text-align: center;
+      opacity: 0;
       transition: all 0.4s ease;
     }
 
     .result.show {
       opacity: 1;
-      transform: translateY(0);
-    }
-
-    .btn, .close-btn {
-      margin-bottom: 10%;
-      padding: 15px 35px;
-      font-size: 1.2rem;
-      font-weight: 600;
-      border: none;
-      border-radius: 14px;
-      background: var(--tg-theme-button-color, #0088cc);
-      color: var(--tg-theme-button-text-color, #fff);
-      cursor: pointer;
-      transition: background 0.2s ease, transform 0.1s ease;
-    }
-
-    .btn:active, .close-btn:active {
-      transform: scale(0.96);
-    }
-
-    .close-btn {
-      display: none;
-    }
-
-    .close-btn.show {
-      display: block;
     }
   </style>
 </head>
 <body>
-  <h1>SilenceMeter</h1>
+  <div class="content">
+    <h1>SilenceMeter</h1>
 
-  <div class="progress-container" id="progressContainer">
-    <div class="progress-bar" id="progressBar"></div>
+    <div class="progress-container" id="progressContainer">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="result" id="result"></div>
   </div>
-
-  <div class="result" id="result"></div>
-  <button class="btn" id="measureBtn">Измерить радиацию</button>
-  <button class="close-btn" id="closeBtn">Закрыть</button>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
@@ -113,48 +83,56 @@
     tg.expand();
 
     const resultEl = document.getElementById("result");
-    const btn = document.getElementById("measureBtn");
-    const closeBtn = document.getElementById("closeBtn");
     const progressContainer = document.getElementById("progressContainer");
     const progressBar = document.getElementById("progressBar");
 
+    let lastResult = null;
+    let state = "ready"; // ready | measured
+
+    // Устанавливаем начальную кнопку
+    tg.MainButton.setText("Измерить радиацию");
+    tg.MainButton.show();
+
     function getComment(value) {
-      if (value < 0.5) return "Опасности нет ✅";
-      if (value < 2) return "Уровень в норме ⚡";
-      if (value < 5) return "Повышенный фон! 🟡";
-      return "Эвакуация немедленно! ☢️";
+      if (value < 0.5) return "Опасности нет";
+      if (value < 2) return "Уровень в норме";
+      if (value < 5) return "Повышенный фон";
+      return "Эвакуация немедленно!";
     }
 
-    btn.addEventListener("click", () => {
-      resultEl.classList.remove("show");
-      closeBtn.classList.remove("show");
-      progressBar.style.width = "0%";
-      progressContainer.classList.add("show");
+    tg.MainButton.onClick(() => {
+      if (state === "ready") {
+        // Запускаем измерение
+        resultEl.classList.remove("show");
+        progressBar.style.width = "0%";
+        progressContainer.classList.add("show");
 
-      setTimeout(() => {
-        progressBar.style.width = "100%";
-      }, 100);
+        setTimeout(() => {
+          progressBar.style.width = "100%";
+        }, 100);
 
-      setTimeout(() => {
-        const value = (Math.random() * 10).toFixed(2);
-        const comment = getComment(value);
-        const dateStr = new Date().toLocaleString("ru-RU");
+        setTimeout(() => {
+          const value = (Math.random() * 10).toFixed(2);
+          const comment = getComment(value);
+          const dateStr = new Date().toLocaleString("ru-RU");
 
-        resultEl.innerHTML = `Уровень радиации: ${value} μSv/h<br><small>${comment}</small>`;
-        resultEl.classList.add("show");
-        progressContainer.classList.remove("show");
-        closeBtn.classList.add("show");
+          resultEl.innerHTML = `Уровень радиации: ${value} μSv/h<br><small>${comment}</small>`;
+          resultEl.classList.add("show");
+          progressContainer.classList.remove("show");
 
-        // Вибрация для атмосферы (если поддерживается)
-        if (navigator.vibrate) navigator.vibrate(200);
+          lastResult = { radiation: value, comment, date: dateStr };
 
-        // Отправляем данные в бота
-        tg.sendData(JSON.stringify({ radiation: value, comment, date: dateStr }));
-      }, 2200);
-    });
-
-    closeBtn.addEventListener("click", () => {
-      tg.close();
+          // Меняем кнопку
+          tg.MainButton.setText("Закрыть");
+          state = "measured";
+        }, 2200);
+      } else if (state === "measured") {
+        // Отправляем результат и закрываем
+        if (lastResult) {
+          tg.sendData(JSON.stringify(lastResult));
+        }
+        tg.close();
+      }
     });
   </script>
 </body>
