@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SilenceMeter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--tg-theme-bg-color, #f5f5f5);
+      color: var(--tg-theme-text-color, #222);
+      font-family: 'Montserrat', sans-serif;
+      transition: all 0.3s ease;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-top: 20%;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .progress-container {
+      width: 80%;
+      height: 18px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.1);
+      margin-top: 30px;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+    }
+
+    .progress-container.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: var(--tg-theme-button-color, #0088cc);
+      transition: width 2s linear;
+    }
+
+    .result {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      margin-top: 30px;
+      padding: 15px 25px;
+      border-radius: 16px;
+      background: var(--tg-theme-button-color, #0088cc);
+      color: var(--tg-theme-button-text-color, #fff);
+      opacity: 0;
+      transform: translateY(20px);
+      text-align: center;
+      transition: all 0.4s ease;
+    }
+
+    .result.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .btn, .close-btn {
+      margin-bottom: 10%;
+      padding: 15px 35px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 14px;
+      background: var(--tg-theme-button-color, #0088cc);
+      color: var(--tg-theme-button-text-color, #fff);
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    .btn:active, .close-btn:active {
+      transform: scale(0.96);
+    }
+
+    .close-btn {
+      display: none;
+    }
+
+    .close-btn.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>SilenceMeter</h1>
+
+  <div class="progress-container" id="progressContainer">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div class="result" id="result"></div>
+  <button class="btn" id="measureBtn">Измерить радиацию</button>
+  <button class="close-btn" id="closeBtn">Закрыть</button>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const resultEl = document.getElementById("result");
+    const btn = document.getElementById("measureBtn");
+    const closeBtn = document.getElementById("closeBtn");
+    const progressContainer = document.getElementById("progressContainer");
+    const progressBar = document.getElementById("progressBar");
+
+    function getComment(value) {
+      if (value < 0.5) return "Опасности нет ✅";
+      if (value < 2) return "Уровень в норме ⚡";
+      if (value < 5) return "Повышенный фон! 🟡";
+      return "Эвакуация немедленно! ☢️";
+    }
+
+    btn.addEventListener("click", () => {
+      resultEl.classList.remove("show");
+      closeBtn.classList.remove("show");
+      progressBar.style.width = "0%";
+      progressContainer.classList.add("show");
+
+      setTimeout(() => {
+        progressBar.style.width = "100%";
+      }, 100);
+
+      setTimeout(() => {
+        const value = (Math.random() * 10).toFixed(2);
+        const comment = getComment(value);
+        const dateStr = new Date().toLocaleString("ru-RU");
+
+        resultEl.innerHTML = `Уровень радиации: ${value} μSv/h<br><small>${comment}</small>`;
+        resultEl.classList.add("show");
+        progressContainer.classList.remove("show");
+        closeBtn.classList.add("show");
+
+        // Вибрация для атмосферы (если поддерживается)
+        if (navigator.vibrate) navigator.vibrate(200);
+
+        // Отправляем данные в бота
+        tg.sendData(JSON.stringify({ radiation: value, comment, date: dateStr }));
+      }, 2200);
+    });
+
+    closeBtn.addEventListener("click", () => {
+      tg.close();
+    });
+  </script>
+</body>
+</html>
